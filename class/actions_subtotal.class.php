@@ -316,7 +316,8 @@ class ActionsSubtotal
 										,type: 'POST'
 										,data: params
 									}).done(function() {
-										document.location.href=url_to;
+										document.location.href=url_to+"#tableaddline";
+										location.reload();
 									});
 
                                     $( this ).dialog( "close" );
