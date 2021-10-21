@@ -316,6 +316,7 @@ class ActionsSubtotal
 										,type: 'POST'
 										,data: params
 									}).done(function() {
+										url_to=url_to+"&gotoline=1#tableaddline";
 										document.location.href=url_to;
 									});
 
@@ -330,7 +331,6 @@ class ActionsSubtotal
 
 					$('a[rel=add_title_line]').click(function()
 					{
-						// window.location.href='<?php echo $_SERVER['PHP_SELF']; ?>';
 						promptSubTotal('addTitle'
 							 , "<?php echo $langs->trans('YourTitleLabel') ?>"
 							 , "<?php echo $langs->trans('title'); ?>"
