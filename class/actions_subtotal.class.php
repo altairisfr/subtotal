@@ -179,8 +179,9 @@ class ActionsSubtotal
 					dol_include_once('/subtotal/class/subtotal.class.php');
 
 					if (!empty($conf->global->SUBTOTAL_AUTO_ADD_SUBTOTAL_ON_ADDING_NEW_TITLE) && $qty < 10) TSubtotal::addSubtotalMissing($object, $qty);
-
-	    			TSubtotal::addSubTotalLine($object, $title, $qty);
+					$rang = GETPOST('rank', 'int') ? (int) GETPOST('rank', 'int') : '-1';
+	    			$newlineid = TSubtotal::addSubTotalLine($object, $title, $qty, $rang);
+					echo '<div id="newlineid">'.$newlineid.'</div>';
 				}
 				else if($action==='ask_deleteallline') {
 						$form=new Form($db);
@@ -247,6 +248,7 @@ class ActionsSubtotal
 
 						 var dialog_html = '<div id="dialog-prompt-subtotal" '+(action == 'addSubtotal' ? 'class="center"' : '')+' >';
 						 dialog_html += '<input id="token" name="token" type="hidden" value="<?php echo ((float) DOL_VERSION < 11.0) ?  $_SESSION['newtoken'] : newToken(); ?>" />';
+						 dialog_html += '<input id="subtotal_line_position" name="subtotal_line_position" type="text" size="1" text-align="right" placeholder="<?php echo $langs->transnoentities('Position') ?>" />';
 
 						 if (typeof show_under_title != 'undefined' && show_under_title)
 						 {
@@ -305,6 +307,7 @@ class ActionsSubtotal
 	                        buttons: {
 	                            "Ok": function() {
 	                            	if (typeof use_textarea != 'undefined' && use_textarea && typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined" ){ updateAllMessageForms(); }
+									params.rank = $(this).find('#subtotal_line_position').val();
 									params.title = (typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined" && "sub-total-title" in CKEDITOR.instances ? CKEDITOR.instances["sub-total-title"].getData() : $(this).find('#sub-total-title').val());
 									params.under_title = $(this).find('select[name=under_title]').val();
 									params.free_text = $(this).find('select[name=free_text]').val();
@@ -315,9 +318,11 @@ class ActionsSubtotal
 										url: url_ajax
 										,type: 'POST'
 										,data: params
-									}).done(function() {
-										document.location.href=url_to+"#tableaddline";
-										location.reload();
+										,dataType: "html"
+									}).done(function(response) {
+										newlineid = $($.parseHTML(response)).find("#newlineid").text();
+										url_to=url_to+"&gotoline="+params.rank+"#row-"+newlineid;
+										document.location.href=url_to;
 									});
 
                                     $( this ).dialog( "close" );
