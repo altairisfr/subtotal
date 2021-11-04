@@ -324,8 +324,8 @@ class ActionsSubtotal
 										,data: params
 										,dataType: "html"
 									}).done(function(response) {
-										newlineid = $($.parseHTML(response)).find("#newlineid").text();
 										<?php if ($conf->global->MAIN_VIEW_LINE_NUMBER == 1) {?>
+										newlineid = $($.parseHTML(response)).find("#newlineid").text();
 										url_to=url_to+"&gotoline="+params.rank+"#row-"+newlineid;
 										<?php } else { ?>
 										url_to=url_to+"&gotoline="+params.rank+"#tableaddline";
