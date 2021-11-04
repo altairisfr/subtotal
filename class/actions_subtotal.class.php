@@ -179,9 +179,13 @@ class ActionsSubtotal
 					dol_include_once('/subtotal/class/subtotal.class.php');
 
 					if (!empty($conf->global->SUBTOTAL_AUTO_ADD_SUBTOTAL_ON_ADDING_NEW_TITLE) && $qty < 10) TSubtotal::addSubtotalMissing($object, $qty);
-					$rang = GETPOST('rank', 'int') ? (int) GETPOST('rank', 'int') : '-1';
-	    			$newlineid = TSubtotal::addSubTotalLine($object, $title, $qty, $rang);
-					echo '<div id="newlineid">'.$newlineid.'</div>';
+					if ($conf->global->MAIN_VIEW_LINE_NUMBER == 1) {
+						$rang = GETPOST('rank', 'int') ? (int) GETPOST('rank', 'int') : '-1';
+						$newlineid = TSubtotal::addSubTotalLine($object, $title, $qty, $rang);
+						echo '<div id="newlineid">'.$newlineid.'</div>';
+					} else {
+						TSubtotal::addSubTotalLine($object, $title, $qty);
+					}
 				}
 				else if($action==='ask_deleteallline') {
 						$form=new Form($db);
@@ -320,8 +324,12 @@ class ActionsSubtotal
 										,data: params
 										,dataType: "html"
 									}).done(function(response) {
+										<?php if ($conf->global->MAIN_VIEW_LINE_NUMBER == 1) {?>
 										newlineid = $($.parseHTML(response)).find("#newlineid").text();
 										url_to=url_to+"&gotoline="+params.rank+"#row-"+newlineid;
+										<?php } else { ?>
+										url_to=url_to+"&gotoline="+params.rank+"#tableaddline";
+										<?php } ?>
 										document.location.href=url_to;
 									});
 
