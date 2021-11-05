@@ -252,7 +252,7 @@ class ActionsSubtotal
 
 						 var dialog_html = '<div id="dialog-prompt-subtotal" '+(action == 'addSubtotal' ? 'class="center"' : '')+' >';
 						 dialog_html += '<input id="token" name="token" type="hidden" value="<?php echo ((float) DOL_VERSION < 11.0) ?  $_SESSION['newtoken'] : newToken(); ?>" />';
-						 dialog_html += '<input id="subtotal_line_position" name="subtotal_line_position" type="text" size="1" text-align="right" placeholder="<?php echo $langs->transnoentities('Position') ?>" />';
+						 dialog_html += '<input id="subtotal_line_position" name="subtotal_line_position" type="text" size="1" text-align="right" placeholder="<?php echo $langs->transnoentities('Position') ?>" />&emsp;';
 
 						 if (typeof show_under_title != 'undefined' && show_under_title)
 						 {
@@ -276,7 +276,7 @@ class ActionsSubtotal
 						{
 							if (action == 'addSubtotal') dialog_html += '<input id="sub-total-title" size="30" value="" placeholder="'+label+'" />';
 
-							dialog_html += "&nbsp;<select name='subtotal_line_level'>";
+							dialog_html += "&emsp;<select name='subtotal_line_level'>";
 							for (var i=1;i<10;i++)
 							{
 								dialog_html += "<option value="+i+"><?php echo $langs->trans('Level'); ?> "+i+"</option>";
