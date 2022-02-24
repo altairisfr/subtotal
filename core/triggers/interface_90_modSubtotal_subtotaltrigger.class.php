@@ -208,7 +208,9 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             }
 		    else
             {
-			    $subtotal_add_title_bloc_from_orderstoinvoice = GETPOST('subtotal_add_title_bloc_from_orderstoinvoice', 'none');
+			    $subtotal_add_title_bloc_from_orderstoinvoice = (GETPOST('subtotal_add_title_bloc_from_orderstoinvoice', 'none') || GETPOST('createbills_onebythird', 'int'));
+			    // original : GETPOST('subtotal_add_title_bloc_from_orderstoinvoice', 'none');
+
 			    if (!empty($subtotal_add_title_bloc_from_orderstoinvoice))
 			    {
 				    global $subtotal_current_rang, $subtotal_bloc_previous_fk_commande, $subtotal_bloc_already_add_title, $subtotal_bloc_already_add_st;
