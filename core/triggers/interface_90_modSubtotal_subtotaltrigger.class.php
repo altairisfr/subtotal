@@ -162,6 +162,56 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
         dol_include_once('/subtotal/class/subtotal.class.php');
         $langs->load('subtotal@subtotal');
 
+        // If we inserted an invoice line and it came from a shipment or a delivery, we have a problem, Houston.
+        // The lines of those objects don't have a special_code, it is therefore not copied from them.
+        // Nevertheless, they refer their origin order line => Get the order line, and if it belongs to our
+        // module, update the invoice line accordingly
+        if (
+            $action === 'LINEBILL_INSERT'
+            && isset($object->origin)
+            && in_array($object->origin, array('shipping', 'delivery'))
+            && ! empty($object->origin_id)
+        ) {
+            if ($object->element === 'delivery') {
+                require_once DOL_DOCUMENT_ROOT . '/delivery/class/delivery.class.php';
+                $originSendingLine = new DeliveryLine($this->db);
+            } else {
+                require_once DOL_DOCUMENT_ROOT . '/expedition/class/expedition.class.php';
+                $originSendingLine = new ExpeditionLigne($this->db);
+            }
+
+            $originSendingLineFetchReturn = $originSendingLine->fetch($object->origin_id);
+
+            if ($originSendingLineFetchReturn < 0) {
+                $this->error = $originSendingLine->error;
+                $this->errors = $originSendingLine->errors;
+                return $originSendingLineFetchReturn;
+            }
+
+            require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
+            $originOrderLine = new OrderLine($this->db);
+
+            $originOrderLineFetchReturn = $originOrderLine->fetch($originSendingLine->fk_origin_line);
+
+            if ($originOrderLineFetchReturn < 0) {
+                $this->error = $originOrderLine->error;
+                $this->errors = $originOrderLine->errors;
+                return $originOrderLineFetchReturn;
+            }
+
+            if ($originOrderLine->special_code == TSubtotal::$module_number) {
+                $object->special_code = TSubtotal::$module_number;
+
+                $updateReturn = $object->update($user, 1); // No trigger to prevent loops
+
+                if ($updateReturn < 0) {
+                    $this->error = $object->error;
+                    $this->errors = $object->errors;
+                    return $updateReturn;
+                }
+            }
+        }
+
         if (!empty($conf->global->SUBTOTAL_ALLOW_ADD_LINE_UNDER_TITLE) && in_array($action, array('LINEPROPAL_INSERT', 'LINEORDER_INSERT', 'LINEBILL_INSERT')))
 		{
 			$rang = GETPOST('under_title', 'int'); // Rang du titre
@@ -209,7 +259,6 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		    else
             {
 			    $subtotal_add_title_bloc_from_orderstoinvoice = (GETPOST('subtotal_add_title_bloc_from_orderstoinvoice', 'none') || GETPOST('createbills_onebythird', 'int'));
-			    // original : GETPOST('subtotal_add_title_bloc_from_orderstoinvoice', 'none');
 
 			    if (!empty($subtotal_add_title_bloc_from_orderstoinvoice))
 			    {
@@ -353,13 +402,55 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		if ($action == 'SHIPPING_CREATE') {
 			$object->fetch_lines(); // Obligé de fetch les lines car au retour de la création, les lignes n'ont pas leur id...
 
-			// Parcours des lignes et lorsque un tire et un sous-total de même niveau, ou 2 titres de même niveau sont à la suite, on les supprime
+			// on recupere la commande
+			$object->fetchObjectLinked();
+
 			foreach ($object->lines as &$line) {
 				$orderline = new OrderLine($this->db);
 				$orderline->fetch($line->origin_line_id);
+				// si la conf pas d'affichage des titres  et consorts (sous total )
+				//on supprime la ligne de sous total
+				if ($conf->global->NO_TITLE_SHOW_ON_EXPED_GENERATION){
+					// le special code n'est pas tranmit dans l'expedition
+					// @todo voir plus tard pourquoi nous n'avons pas cette information dans la ligne d'expedition
+					if (empty($line->special_code)){
+						//  récuperation  de la facture generé par Trigger
+
+						if (count($object->linkedObjectsIds['commande']) == 1) {
+							$cmd = new Commande($this->db);
+							$res = $cmd->fetch(array_pop($object->linkedObjectsIds['commande']));
+							if ($res > 0  ){
+								$resLines = $cmd->fetch_lines();
+								if ($resLines > 0 ) {
+									foreach ($cmd->lines as $cmdLine){
+										if ($cmdLine->id == $line->origin_line_id){
+											$line->special_code = $cmdLine->special_code;
+											break;
+										}
+									}
+								} else{
+									//error
+									setEventMessage($langs->trans("ErrorLoadingLinesFromLinkedOrder"),'errors');
+								}
+							} else{
+								//error
+								setEventMessage($langs->trans("ErrorLoadingLinkedOrder"),'errors');
+							}
+						}
+
+					}
+
+						if(TSubtotal::isModSubtotalLine($line)) {
+							$resdelete = $line->delete($user);
+							if ($resdelete < 0){
+								setEventMessage($langs->trans('Error_subtotal_delete_line'),'errors');
+							}
+						}
+				}
 
 				if(TSubtotal::isTitle($orderline) || TSubtotal::isSubtotal($orderline)) { // Nous sommes sur une ligne titre, si la ligne précédente est un titre de même niveau, on supprime la ligne précédente
 					$line->special_code = TSubtotal::$module_number;
+
 				}
 			}
 			$TLinesToDelete = array();
@@ -369,8 +460,8 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 					$TBlocks = array();
 					$isThereProduct = false;
 					foreach($TLines as $lineInBlock) {
-						if(TSubtotal::isTitle($lineInBlock) || TSubtotal::isSubtotal($lineInBlock)) $TBlocks[$lineInBlock->id] = $lineInBlock;
-						else $isThereProduct = true;
+							if(TSubtotal::isTitle($lineInBlock) || TSubtotal::isSubtotal($lineInBlock)) $TBlocks[$lineInBlock->id] = $lineInBlock;
+							else $isThereProduct = true;
 					}
 					if(!$isThereProduct) {
 						$TLinesToDelete = array_merge($TLinesToDelete, $TBlocks);
@@ -382,7 +473,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 					$lineToDelete->delete($user);
 				}
 			}
-			//exit;
+
 		}
 
         if ($action == 'USER_LOGIN') {
@@ -854,7 +945,10 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        }
+        }elseif ($action == 'LINESHIPPING_INSERT') {
+
+				dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+		}
 
         // File
         elseif ($action == 'FILE_UPLOAD') {
