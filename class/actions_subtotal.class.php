@@ -3328,6 +3328,80 @@ class ActionsSubtotal
 
 				moveBlockCol.disableSelection(); // prevent selection
 
+<?php if ($object->statut == 0) { ?>
+				// apply some graphical stuff
+				moveBlockCol.css("background-image",'url(<?php echo dol_buildpath('subtotal/img/grip_all.png',2);  ?>)');
+				moveBlockCol.css("background-repeat","no-repeat");
+				moveBlockCol.css("background-position","center center");
+				moveBlockCol.css("cursor","move");
+				titleRow.attr('title', '<?php echo html_entity_decode($langs->trans('MoveTitleBlock')); ?>');
+
+
+ 				$( "#<?php echo $tagidfortablednd; ?>" ).sortable({
+			    	  cursor: "move",
+			    	  handle: ".movetitleblock",
+			    	  items: 'tr:not(.nodrag,.nodrop,.noblockdrop)',
+			    	  delay: 150, //Needed to prevent accidental drag when trying to select
+			    	  opacity: 0.8,
+			    	  axis: "y", // limit y axis
+			    	  placeholder: "ui-state-highlight",
+			    	  start: function( event, ui ) {
+			    	      //console.log('X:' + e.screenX, 'Y:' + e.screenY);
+			    		  //console.log(ui.item);
+			    		  var colCount = ui.item.children().length;
+   						  ui.placeholder.html('<td colspan="'+colCount+'">&nbsp;</td>');
+
+			    		  var TcurrentChilds = getSubtotalTitleChilds(ui.item);
+			    		  ui.item.data('childrens',TcurrentChilds); // store data
+
+			    		  for (var key in TcurrentChilds) {
+			    			  $('#'+ TcurrentChilds[key]).addClass('noblockdrop');//'#row-'+
+			    			  $('#'+ TcurrentChilds[key]).fadeOut();//'#row-'+
+			    		  }
+
+			    		  $(this).sortable("refresh");	// "refresh" of source sortable is required to make "disable" work!
+
+			    	    },
+				    	stop: function (event, ui) {
+							// call we element is droped
+				    	  	$('.noblockdrop').removeClass('noblockdrop');
+
+				    	  	var TcurrentChilds = ui.item.data('childrens'); // reload child list from data and not attr to prevent load error
+
+							for (var i =TcurrentChilds.length ; i >= 0; i--) {
+				    			  $('#'+ TcurrentChilds[i]).insertAfter(ui.item); //'#row-'+
+				    			  $('#'+ TcurrentChilds[i]).fadeIn(); //'#row-'+
+							}
+							console.log('onstop');
+							console.log(cleanSerialize($(this).sortable('serialize')));
+
+							$.ajax({
+			    	            data: {
+									objet_id: <?php print $object->id; ?>,
+							    	roworder: cleanSerialize($(this).sortable('serialize')),
+									table_element_line: "<?php echo $table_element_line; ?>",
+									fk_element: "<?php echo $fk_element; ?>",
+									element_id: "<?php echo $id; ?>",
+									filepath: "<?php echo urlencode($filepath); ?>"
+								},
+			    	            type: 'POST',
+			    	            url: '<?php echo DOL_URL_ROOT; ?>/core/ajax/row.php',
+			    	            success: function(data) {
+			    	                console.log(data);
+			    	            },
+			    	        });
+
+			    	  },
+			    	  update: function (event, ui) {
+
+			    	        // POST to server using $.post or $.ajax
+				    	  	$('.noblockdrop').removeClass('noblockdrop');
+							//console.log('onupdate');
+			    	        //console.log(cleanSerialize($(this).sortable('serialize')));
+			    	    }
+			    });
+ 				<?php } ?>
+
 				function getSubtotalTitleChilds(item)
 				{
 		    		var TcurrentChilds = []; // = JSON.parse(item.attr('data-childrens'));
