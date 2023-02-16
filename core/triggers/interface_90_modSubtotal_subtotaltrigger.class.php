@@ -30,6 +30,8 @@
  * 				- The name property name must be Mytrigger
  */
 
+require_once DOL_DOCUMENT_ROOT.'/core/triggers/dolibarrtriggers.class.php';
+
 /**
  * Trigger class
  */
@@ -52,49 +54,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
         $this->picto = 'subtotal@subtotal';
     }
 
-    /**
-     * Trigger name
-     *
-     * 	@return		string	Name of trigger file
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * Trigger description
-     *
-     * 	@return		string	Description of trigger file
-     */
-    public function getDesc()
-    {
-        return $this->description;
-    }
-
-    /**
-     * Trigger version
-     *
-     * 	@return		string	Version of trigger file
-     */
-    public function getVersion()
-    {
-        global $langs;
-        $langs->load("admin");
-
-        if ($this->version == 'development') {
-            return $langs->trans("Development");
-        } elseif ($this->version == 'experimental')
-
-                return $langs->trans("Experimental");
-        elseif ($this->version == 'dolibarr') return DOL_VERSION;
-        elseif ($this->version) return $this->version;
-        else {
-            return $langs->trans("Unknown");
-        }
-    }
-
-	public function addToBegin(&$parent, &$object, $rang)
+    public function addToBegin(&$parent, &$object, $rang)
 	{
 		foreach ($parent->lines as &$line)
 		{
@@ -330,7 +290,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 			}
 		}
 
-		if (!empty($conf->global->SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS) && in_array($action, array('LINEPROPAL_INSERT', 'LINEPROPAL_UPDATE', 'LINEORDER_INSERT', 'LINEORDER_UPDATE', 'LINEBILL_INSERT', 'LINEBILL_UPDATE', 'LINEBILL_SUPPLIER_CREATE', 'LINEBILL_SUPPLIER_UPDATE')))
+		if (!empty($conf->global->SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS) && in_array($action, array('LINEPROPAL_INSERT', 'LINEPROPAL_UPDATE', 'LINEPROPAL_MODIFY', 'LINEORDER_INSERT', 'LINEORDER_UPDATE', 'LINEORDER_MODIFY', 'LINEBILL_INSERT', 'LINEBILL_UPDATE', 'LINEBILL_SUPPLIER_CREATE', 'LINEBILL_SUPPLIER_UPDATE', 'LINEBILL_SUPPLIER_MODIFY')))
 		{
             if(! function_exists('_updateLineNC')) dol_include_once('/subtotal/lib/subtotal.lib.php');
 
@@ -700,7 +660,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        } elseif ($action == 'LINEPROPAL_MODIFY') {
+        } elseif ($action == 'LINEPROPAL_MODIFY' || $action == 'LINEPROPAL_UPDATE') {
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
