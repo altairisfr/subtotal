@@ -425,7 +425,7 @@ class ActionsSubtotal
 	function formBuilddocOptions($parameters, &$object) {
 	/* Réponse besoin client */
 
-		global $conf, $langs, $bc;
+		global $conf, $langs;
 
 		$action = GETPOST('action', 'none');
 		$contextArray = explode(':',$parameters['context']);
@@ -443,7 +443,6 @@ class ActionsSubtotal
 				$hidepricesDefaultConf = !empty($conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED)?$conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED:0;
 				$hideprices= isset( $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] : $hidepricesDefaultConf;
 
-				$var=false;
 				$out = '';
 		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
@@ -452,7 +451,6 @@ class ActionsSubtotal
 		     			</td>
 		     			</tr>';
 
-		     	$var=!$var;
 		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
 		     				<label for="hidedetails">'.$langs->trans('SubTotalhidedetails').'</label>
@@ -460,7 +458,6 @@ class ActionsSubtotal
 		     			</td>
 		     			</tr>';
 
-		     	$var=!$var;
 		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
 		     				<label for="hideprices">'.$langs->trans('SubTotalhidePrice').'</label>
@@ -479,9 +476,8 @@ class ActionsSubtotal
 					|| (in_array('invoicereccard',      $contextArray) && !empty($conf->global->SUBTOTAL_INVOICE_ADD_RECAP ))
 				)
 				{
-					$var=!$var;
 					$out.= '
-						<tr '.$bc[$var].'>
+						<tr class="oddeven">
 							<td colspan="4" align="right">
 								<label for="subtotal_add_recap">'.$langs->trans('subtotal_add_recap').'</label>
 								<input type="checkbox" id="subtotal_add_recap" name="subtotal_add_recap" value="1" '.( GETPOST('subtotal_add_recap', 'none') ? 'checked="checked"' : '' ).' />
