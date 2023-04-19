@@ -425,7 +425,7 @@ class ActionsSubtotal
 	function formBuilddocOptions($parameters, &$object) {
 	/* Réponse besoin client */
 
-		global $conf, $langs, $bc;
+		global $conf, $langs;
 
 		$action = GETPOST('action', 'none');
 		$contextArray = explode(':',$parameters['context']);
@@ -443,25 +443,22 @@ class ActionsSubtotal
 				$hidepricesDefaultConf = !empty($conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED)?$conf->global->SUBTOTAL_HIDE_PRICE_DEFAULT_CHECKED:0;
 				$hideprices= isset( $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] ) ?  $_SESSION['subtotal_hideprices_'.$parameters['modulepart']][$object->id] : $hidepricesDefaultConf;
 
-				$var=false;
 				$out = '';
-		     	$out.= '<tr '.$bc[$var].'>
+		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
 		     				<label for="hideInnerLines">'.$langs->trans('HideInnerLines').'</label>
 		     				<input type="checkbox" onclick="if($(this).is(\':checked\')) { $(\'#hidedetails\').prop(\'checked\', \'checked\')  }" id="hideInnerLines" name="hideInnerLines" value="1" '.(( $hideInnerLines ) ? 'checked="checked"' : '' ).' />
 		     			</td>
 		     			</tr>';
 
-		     	$var=!$var;
-		     	$out.= '<tr '.$bc[$var].'>
+		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
 		     				<label for="hidedetails">'.$langs->trans('SubTotalhidedetails').'</label>
 		     				<input type="checkbox" id="hidedetails" name="hidedetails" value="1" '.(( $hidedetails ) ? 'checked="checked"' : '' ).' />
 		     			</td>
 		     			</tr>';
 
-		     	$var=!$var;
-		     	$out.= '<tr '.$bc[$var].'>
+		     	$out.= '<tr class="oddeven">
 		     			<td colspan="4" align="right">
 		     				<label for="hideprices">'.$langs->trans('SubTotalhidePrice').'</label>
 		     				<input type="checkbox" id="hideprices" name="hideprices" value="1" '.(( $hideprices ) ? 'checked="checked"' : '' ).' />
@@ -469,7 +466,7 @@ class ActionsSubtotal
 		     			</tr>';
 
 
-
+						
 				if (
 					(in_array('propalcard',             $contextArray) && !empty($conf->global->SUBTOTAL_PROPAL_ADD_RECAP))
 					|| (in_array('ordercard',           $contextArray) && !empty($conf->global->SUBTOTAL_COMMANDE_ADD_RECAP))
@@ -479,16 +476,14 @@ class ActionsSubtotal
 					|| (in_array('invoicereccard',      $contextArray) && !empty($conf->global->SUBTOTAL_INVOICE_ADD_RECAP ))
 				)
 				{
-					$var=!$var;
 					$out.= '
-						<tr '.$bc[$var].'>
+						<tr class="oddeven">
 							<td colspan="4" align="right">
 								<label for="subtotal_add_recap">'.$langs->trans('subtotal_add_recap').'</label>
 								<input type="checkbox" id="subtotal_add_recap" name="subtotal_add_recap" value="1" '.( GETPOST('subtotal_add_recap', 'none') ? 'checked="checked"' : '' ).' />
 							</td>
 						</tr>';
 				}
-
 
 				$this->resprints = $out;
 			}
