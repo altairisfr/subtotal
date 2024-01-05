@@ -1101,7 +1101,7 @@ class ActionsSubtotal
 
 					$TInfo = $this->getTotalLineFromObject($object, $line, '', 1);
 					$TTotal_tva = $TInfo[3];
-					$total_to_print = price($TInfo[0]);
+					$total_to_print = price($TInfo[2] - $TInfo[1]);
 
                     $line->total_ht = $TInfo[0];
 					$line->total = $TInfo[0];
