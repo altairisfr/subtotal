@@ -466,7 +466,7 @@ class ActionsSubtotal
 		     			</tr>';
 
 
-						
+
 				if (
 					(in_array('propalcard',             $contextArray) && !empty($conf->global->SUBTOTAL_PROPAL_ADD_RECAP))
 					|| (in_array('ordercard',           $contextArray) && !empty($conf->global->SUBTOTAL_COMMANDE_ADD_RECAP))
@@ -1662,7 +1662,9 @@ class ActionsSubtotal
 
 		if (empty($object->lines[$i])) return 0; // hideInnerLines => override $object->lines et Dolibarr ne nous permet pas de mettre à jour la variable qui conditionne la boucle sur les lignes (PR faite pour 6.0)
 
-		$object->lines[$i]->fetch_optionals();
+		if (empty($object->lines[$i]->array_options)) { // contournement bug v18
+			$object->lines[$i]->fetch_optionals();
+		}
 		// Si la gestion C/NC est active et que je suis sur un ligne dont l'extrafield est coché
 		if (
 		!empty($conf->global->SUBTOTAL_MANAGE_COMPRIS_NONCOMPRIS) &&
