@@ -25,17 +25,14 @@
  *		\remarks	Put here some comments
  */
 // Change this following line to use the correct relative path (../, ../../, etc)
-// Dolibarr environment
-$res = @include("../../main.inc.php"); // From htdocs directory
-if (! $res) {
-    $res = @include("../../../main.inc.php"); // From "custom" directory
-}
+// Load Dolibarr environment
+require_once "../main_module.inc.php";
 
 // Libraries
 require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
 require_once '../lib/subtotal.lib.php';
 
-$langs->load("subtotal@subtotal");
+$langs->loadLangs(array("subtotal@subtotal"));
 
 // Access control
 if (! $user->admin) {
