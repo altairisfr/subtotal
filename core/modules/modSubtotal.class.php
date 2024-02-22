@@ -65,7 +65,7 @@ class modSubtotal extends DolibarrModules
         // Possible values for version are: 'development', 'experimental' or version
 
         $this->version = '2024.02';
-		/* add a / at the beginning of this line to uncomment this for untagged versions
+		//* add a / at the beginning of this line to uncomment this for untagged versions
 		$output_code = 0;
 		$output = array();
 		exec('cd '.__DIR__. ' && git describe --tags', $output, $output_code);
