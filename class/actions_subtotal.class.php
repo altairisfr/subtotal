@@ -703,7 +703,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 			if ($found)
 			{
-				header('Location: '.$_SERVER['PHP_SELF'].'?'.$idvar.'='.$object->id);
+				header('Location: '.$_SERVER['PHP_SELF'].'?'.$idvar.'='.$object->id.(!empty(GETPOST('tab')) ? '&tab='.GETPOST('tab') : ''));
 				exit; // Surtout ne pas laisser Dolibarr faire du traitement sur le updateligne sinon ça plante les données de la ligne
 			}
 		}
