@@ -245,7 +245,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 				if($object->element != 'shipping' && $action!='editline') {
 					// New format is for 3.8
-					$this->printNewFormat($object, $conf, $langs, $idvar);
+					$this->printNewFormat($object, $parameters, $langs, $idvar);
 				}
 			}
 		}
@@ -257,7 +257,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 		return 0;
 	}
 
-	function printNewFormat(&$object, &$conf, &$langs, $idvar)
+	function printNewFormat(&$object, &$parameters, &$langs, $idvar)
 	{
 		if (!getDolGlobalString('SUBTOTAL_ALLOW_ADD_BLOCK')) return false;
 
@@ -322,7 +322,7 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 						}
 
 						if(jsSubTotalData.conf.MAIN_VIEW_LINE_NUMBER) {
-							dialog_html += '&emsp;<input style="max-width: 80px;" id="subtotal_line_position" name="subtotal_line_position" type="number" min="0" step="1" size="1" text-align="right" placeholder="' + jsSubTotalData.langs.Position + '" />';
+							dialog_html += '&emsp;<input style="max-width: 80px;min-width: 50px;" id="subtotal_line_position" name="subtotal_line_position" type="number" min="0" step="1" size="1" text-align="right" placeholder="' + jsSubTotalData.langs.Position + '" />';
 						}
 
 						if (action == 'addTitle' || action == 'addSubtotal')
@@ -380,6 +380,10 @@ class ActionsSubtotal extends \subtotal\RetroCompatCommonHookActions
 
 									let microtime = new Date();
 									url_to+="&microtime="+ microtime.getTime(); // to avoid # ancor blocking refresh by adding same rank as curent
+									// consider custom tabs redirections
+									<?php if (GETPOSTISSET('tab')) { ?>
+										url_to += "&tab=<?php print GETPOST('tab'); ?>";
+									<?php } ?>
 
 									$.ajax({
 										url: url_ajax
