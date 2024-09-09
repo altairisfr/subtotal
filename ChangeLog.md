@@ -1,7 +1,8 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+# 2024.08
+- Merge ATM 3.23 version into altairis version
 
 
 
