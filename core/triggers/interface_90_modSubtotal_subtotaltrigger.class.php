@@ -140,7 +140,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		/* Refer to issue #379 */
 		if($action == 'LINEBILL_INSERT'){
 			static $TInvoices = array();
-			if ($TInvoices[$object->fk_facture] === null) {
+			if (!isset($TInvoices[$object->fk_facture]) || $TInvoices[$object->fk_facture] === null) {
 				$staticInvoice = new Facture($this->db);
 				if ($staticInvoice->fetch($object->fk_facture) < 0){
 					$object->error = $staticInvoice->error;
