@@ -64,7 +64,7 @@ class modSubtotal extends DolibarrModules
         $this->description = "Module permettant d'ajouter des titres, sous-totaux et des sous-totaux intermédiaires dans un tableau ou une liste, tout en facilitant le déplacement fluide d'une ligne d'éléments d'un sous-total à un autre.";
         // Possible values for version are: 'development', 'experimental' or version
 
-        $this->version = '2024.12-beta1';
+        $this->version = '2025.01';
 		//* add a / at the beginning of this line to uncomment this for untagged versions
 		$output_code = 0;
 		$output = array();

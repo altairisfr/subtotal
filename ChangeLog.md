@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## 2025.01
 - FIX: PHP Warning
 
 # 2024.08
