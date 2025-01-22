@@ -66,12 +66,14 @@ class modSubtotal extends DolibarrModules
 
         $this->version = '2025.01';
 		//* add a / at the beginning of this line to uncomment this for untagged versions
-		$output_code = 0;
-		$output = array();
-		exec('cd '.__DIR__. ' && git describe --tags', $output, $output_code);
-		$dev_version = $output[0];
-		if (!empty($dev_version)) {
-			$this->version = $dev_version;
+		if (function_exists('exec')) {
+			$output_code = 0;
+			$output = array();
+			exec('cd '.__DIR__. ' && git describe --tags', $output, $output_code);
+			$dev_version = $output[0];
+			if (!empty($dev_version)) {
+				$this->version = $dev_version;
+			}
 		}
 		//*/
 
