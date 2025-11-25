@@ -26,6 +26,7 @@ SubtotalLineShowQty = Mostrar cantidad en subtotal
 Level = Nivel
 SubtotalLabel = <b>Subtotal : </b>
 
+SUBTOTAL_HIDE_FOLDERS_BY_DEFAULT=Ocultar carpetas por defecto
 SUBTOTAL_USE_NEW_FORMAT=Activar ajustes avanzados
 SUBTOTAL_USE_NUMEROTATION=Habilitar numeración automática en PDF
 SUBTOTAL_ALLOW_ADD_BLOCK=Permitir agregar un título y un subtotal
@@ -131,3 +132,11 @@ SubtotalExperimentalZone = Configuraciones experimentales u obsoletas
 SUBTOTAL_HIDE_OPTIONS_TITLE=Ocultar opciones de título
 SUBTOTAL_HIDE_OPTIONS_BREAK_PAGE_BEFORE=Ocultar la opción de salto de página
 SUBTOTAL_HIDE_OPTIONS_BUILD_DOC=Ocultar las opciones de generación de documentos
+
+LinkedShippings = Órdenes de envío vinculadas
+LinkedShipping = Orden de envío vinculada
+LinkedDeliveries = Albaranes vinculados
+LinkedDelivery = Albarán vinculado
+SubtotalOptions = Parámetros Subtotal
+AddShippingListToTile = Añada la lista de referencia de los albaranes o notas de entrega relacionados a la descripción del bloque de título.
+UseHiddenConfToAutoCheck = Para que la casilla se marque por defecto, puede activar el siguiente ajuste en "Ótras configuraciones"

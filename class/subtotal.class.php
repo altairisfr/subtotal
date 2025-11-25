@@ -1,4 +1,9 @@
 <?php
+/**
+* SPDX-License-Identifier: GPL-3.0-or-later
+* This file is part of Dolibarr module Subtotal
+*/
+
 
 
 class TSubtotal {
@@ -90,87 +95,105 @@ class TSubtotal {
 
 
 	/**
+	 *
+	 * n'est pas appelé lors de la  de facture depuis un object (propal/command)
 	 * @param CommonObject $object
 	 * @param string       $label
 	 * @param int          $qty
 	 * @param int          $rang
+	 * @param string $desc
 	 * @return int
+	 *
 	 */
 	static function addSubTotalLine(&$object, $label, $qty, $rang=-1) {
 
 		$res = 0;
 
-		if( (float)DOL_VERSION <= 3.4 ) {
-			/**
-			 * @var $object Facture
-			 */
-			if($object->element=='facture') $res =  $object->addline($object->id, $label, 0,$qty,0,0,0,0,0,'','',0,0,'','HT',0,9,-1, TSubtotal::$module_number);
-			/**
-			 * @var $object Propal
-			 */
-			else if($object->element=='propal') $res =  $object->addline($object->id,$label, 0,$qty,0,0,0,0,0,'HT',0,0,9,-1, TSubtotal::$module_number);
-			/**
-			 * @var $object Commande
-			 */
-			else if($object->element=='commande') $res =  $object->addline($object->id,$label, 0,$qty,0,0,0,0,0,0,0,'HT',0,'','',9,-1, TSubtotal::$module_number);
+		$desc = '';
 
+		$TNotElements = array ('invoice_supplier', 'order_supplier');
+		if ($qty==50 && !in_array($object->element, $TNotElements)) {
+			$desc = $label;
+			$label = '';
 		}
-		else {
-			$desc = '';
 
-			$TNotElements = array ('invoice_supplier', 'order_supplier');
-			if ((float) DOL_VERSION < 6  || $qty==50 && !in_array($object->element, $TNotElements) ) {
-				$desc = $label;
-				$label = '';
-			}
-
-			if($object->element=='facture')
-            {
-                /** @var Facture $object */
-                $res =  $object->addline($desc, 0,$qty,0,0,0,0,0,'','',0,0,'','HT',0,9,$rang, TSubtotal::$module_number, '', 0, 0, null, 0, $label);
-            }
-			elseif($object->element=='invoice_supplier') {
-                /** @var FactureFournisseur $object */
-			    $object->special_code = TSubtotal::$module_number;
-                if( (float)DOL_VERSION < 6 ) $rang = $object->line_max() + 1;
-				if ((int)DOL_VERSION < 17) {
-					$res = $object->addline($label,0,0,0,0,$qty,0,0,'','',0,0,'HT',9,$rang);
-				} else {
-					$res = $object->addline($label,0,0,0,0,$qty, 0,0,'','', 0, '', 'HT', 9, $rang, false, 0, null, 0,0,'',TSubtotal::$module_number, 0,0);
-					var_dump($res);
-				}
-			}
-			/**
-			 * @var $object Propal
-			 */
-			else if($object->element=='propal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
-			/**
-			 * @var $object Propal Fournisseur
-			 */
-			else if($object->element=='supplier_proposal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
-
-			/**
-			 * @var $object Commande
-			 */
-			else if($object->element=='commande') $res =  $object->addline($desc, 0,$qty,0,0,0,0,0,0,0,'HT',0,'','',9,$rang, TSubtotal::$module_number, 0, null, 0, $label);
-			/**
-			 * @var $object Commande fournisseur
-			 */
-			else if($object->element=='order_supplier') {
-				/** @var CommandeFournisseur $object */
-			    $object->special_code = TSubtotal::$module_number;
-				if ((int)DOL_VERSION < 17) {
-					$res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9);
-				} else {
-					$res = $object->addline($label, 0, $qty, 0, 0, 0, 0, 0, '', 0, 'HT', 0, 9, 0, false, null, null, 0, null, 0, '', 0 ,$rang, TSubtotal::$module_number);
-				}
-			}
-			/**
-			 * @var $object Facturerec
-			 */
-			else if($object->element=='facturerec') $res =  $object->addline($desc, 0,$qty, 0, 0, 0, 0, 0, 'HT', 0, '', 0, 9, $rang, TSubtotal::$module_number,$label);
-
+		if($object->element=='facture')
+		{
+			/** @var Facture $object */
+			$res =  $object->addline($desc, 0,$qty,0,0,0,0,0,'','',0,0,'','HT',0,9,$rang, TSubtotal::$module_number, '', 0, 0, null, 0, $label);
 		}
+		elseif($object->element=='invoice_supplier') {
+			/** @var FactureFournisseur $object */
+			$object->special_code = TSubtotal::$module_number;
+			$res = $object->addline($label,0,0,0,0,$qty,0,0,'','',0,0,'HT',9,$rang,false,0,null,0,0,'',TSubtotal::$module_number);
+		}
+		/**
+		 * @var $object Propal
+		 */
+		else if($object->element=='propal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
+		/**
+		 * @var $object Propal Fournisseur
+		 */
+		else if($object->element=='supplier_proposal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
+
+		/**
+		 * @var $object Commande
+		 */
+		else if($object->element=='commande') $res =  $object->addline($desc, 0,$qty,0,0,0,0,0,0,0,'HT',0,'','',9,$rang, TSubtotal::$module_number, 0, null, 0, $label);
+		/**
+		 * @var $object Commande fournisseur
+		 */
+		else if($object->element=='order_supplier') {
+			$object->special_code = TSubtotal::$module_number; // à garder pour la rétrocompatibilité
+			$res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9, 0, false, null, null, 0, null, 0, '', 0, -1, TSubtotal::$module_number);
+		}
+		if($object->element=='facture')
+        {
+            /** @var Facture $object */
+            $res =  $object->addline($desc, 0,$qty,0,0,0,0,0,'','',0,0,'','HT',0,9,$rang, TSubtotal::$module_number, '', 0, 0, null, 0, $label);
+        }
+		elseif($object->element=='invoice_supplier') {
+            /** @var FactureFournisseur $object */
+		    $object->special_code = TSubtotal::$module_number;
+            if( (float)DOL_VERSION < 6 ) $rang = $object->line_max() + 1;
+			if ((int)DOL_VERSION < 17) {
+				$res = $object->addline($label,0,0,0,0,$qty,0,0,'','',0,0,'HT',9,$rang);
+			} else {
+				$res = $object->addline($label,0,0,0,0,$qty, 0,0,'','', 0, '', 'HT', 9, $rang, false, 0, null, 0,0,'',TSubtotal::$module_number, 0,0);
+				var_dump($res);
+			}
+		}
+		/**
+		 * @var $object Propal
+		 */
+		else if($object->element=='propal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
+		/**
+		 * @var $object Propal Fournisseur
+		 */
+		else if($object->element=='supplier_proposal') $res = $object->addline($desc, 0,$qty,0,0,0,0,0,'HT',0,0,9,$rang, TSubtotal::$module_number, 0, 0, 0, $label);
+
+		/**
+		 * @var $object Commande
+		 */
+		else if($object->element=='commande') $res =  $object->addline($desc, 0,$qty,0,0,0,0,0,0,0,'HT',0,'','',9,$rang, TSubtotal::$module_number, 0, null, 0, $label);
+		/**
+		 * @var $object Commande fournisseur
+		 */
+		else if($object->element=='order_supplier') {
+			/** @var CommandeFournisseur $object */
+		    $object->special_code = TSubtotal::$module_number;
+			if ((int)DOL_VERSION < 17) {
+				$res = $object->addline($label, 0,$qty,0,0,0,0,0,'',0,'HT', 0, 9);
+			} else {
+				$res = $object->addline($label, 0, $qty, 0, 0, 0, 0, 0, '', 0, 'HT', 0, 9, 0, false, null, null, 0, null, 0, '', 0 ,$rang, TSubtotal::$module_number);
+			}
+		}
+		/**
+		 * @var $object Facturerec
+		 */
+		else if($object->element=='facturerec') $res =  $object->addline($desc, 0,$qty, 0, 0, 0, 0, 0, 'HT', 0, '', 0, 9, $rang, TSubtotal::$module_number,$label);
+
+
 
 		self::generateDoc($object);
 
@@ -201,16 +224,9 @@ class TSubtotal {
 			}
 
 			$ret = $object->fetch($object->id); // Reload to get new records
-			if ((float) DOL_VERSION <= 3.6)
-			{
-				if ($object->element == 'propal') propale_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-				elseif ($object->element == 'commande') commande_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-				elseif ($object->element == 'facture') facture_pdf_create($db, $object, $object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-			}
-			else
-			{
-				if ($object->element!= 'facturerec') $object->generateDocument($object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
-			}
+
+			if ($object->element!= 'facturerec') $object->generateDocument($object->modelpdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
+
 		}
 	}
 
@@ -271,16 +287,17 @@ class TSubtotal {
 		}
 	}
 
-	public static function addTitle(&$object, $label, $level, $rang=-1)
+	public static function addTitle(&$object, $label, $level, $rang=-1, $desc = '')
 	/**
 	 * @param CommonObject $object
 	 * @param string       $label
 	 * @param int          $level
 	 * @param int          $rang
+	 * @param string       $desc
 	 * @return int
 	 */
 	{
-		return self::addSubTotalLine($object, $label, $level, $rang);
+		return self::addSubTotalLine($object, $label, $level, $rang, $desc);
 	}
 
 	public static function addTotal(&$object, $label, $level, $rang=-1)
@@ -438,17 +455,18 @@ class TSubtotal {
 	/**
 	 * @param DoliDB  $db
 	 * @param int     $fk_commandedet
-	 * @param boolean $supplier
+	 * @param bool 	  $supplier
 	 * @return int|false
 	 */
-	public static function getOrderIdFromLineId(&$db, $fk_commandedet, $supplier = false)
+	public static function getOrderIdFromLineId(DoliDB &$db, int $fk_commandedet, bool $supplier = false)
 	{
+
 		if (empty($fk_commandedet)) return false;
 
 		$table = 'commandedet';
 		if ($supplier) $table = 'commande_fournisseurdet';
 
-		$sql = 'SELECT fk_commande FROM '.MAIN_DB_PREFIX.$table.' WHERE rowid = '.$fk_commandedet;
+		$sql = 'SELECT fk_commande FROM '. $db->prefix() . $table.' WHERE rowid = '. intval($fk_commandedet);
 		$resql = $db->query($sql);
 
 		if ($resql && ($row = $db->fetch_object($resql))) return $row->fk_commande;
@@ -458,19 +476,18 @@ class TSubtotal {
 	/**
 	 * @param DoliDB  $db
 	 * @param int     $fk_commande
-	 * @param boolean $supplier
+	 * @param bool $supplier
 	 * @return false|int
 	 */
-	public static function getLastLineOrderId(&$db, $fk_commande, $supplier = false)
+	public static function getLastLineOrderId(DoliDB &$db, int $fk_commande, bool $supplier = false)
 	{
 		if (empty($fk_commande)) return false;
 
         $table = 'commandedet';
         if ($supplier) $table = 'commande_fournisseurdet';
 
-		$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.$table.' WHERE fk_commande = '.$fk_commande.' ORDER BY rang DESC LIMIT 1';
+		$sql = 'SELECT rowid FROM '. $db->prefix() . $table.' WHERE fk_commande = '. intval($fk_commande).' ORDER BY rang DESC, rowid DESC LIMIT 1';
 		$resql = $db->query($sql);
-
 		if ($resql && ($row = $db->fetch_object($resql))) return (int) $row->rowid;
 		else return false;
 	}
@@ -550,13 +567,22 @@ class TSubtotal {
 	}
 
 	/**
+	 * @param $line
+	 * @return bool
+	 */
+	public static function hasBreakPage($line)
+	{
+		return property_exists($line, 'info_bits') && $line->info_bits == 8;
+	}
+
+	/**
 	 * @param CommonObjectLine $line
 	 * @param int              $level
 	 * @return bool
 	 */
 	public static function isTitle(&$line, $level=-1)
 	{
-		$res = $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty <= 9;
+		$res = !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty <= 9;
 		if($res && $level > -1) {
 			return $line->qty == $level;
 		} else return $res;
@@ -570,7 +596,7 @@ class TSubtotal {
 	 */
 	public static function isSubtotal(&$line, $level=-1)
 	{
-	    $res = $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty >= 90;
+	    $res = !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty >= 90;
 	    if($res && $level > -1) {
 	        return self::getNiveau($line) == $level;
 	    } else return $res;
@@ -582,7 +608,7 @@ class TSubtotal {
 	 */
 	public static function isFreeText(&$line)
 	{
-		return $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty == 50;
+		return !empty($line->special_code) && $line->special_code == self::$module_number && $line->product_type == 9 && $line->qty == 50;
 	}
 
 	/**
@@ -777,23 +803,22 @@ class TSubtotal {
 
 				if ( ($key_is_id && $line->id == $key_trad) || (!$key_is_id && $line->product_type == 9 && $line->qty == $level && (in_array($line->desc, $TTitle_search) || in_array($line->label, $TTitle_search) )))
 				{
-
 					if ($key_is_id) $level = $line->qty;
 
 					$add_line = true;
 					if ($withBlockLine) $TLine[] = $line;
 					continue;
 				}
-				elseif ($add_line && TSubtotal::isModSubtotalLine($line) && TSubtotal::getNiveau($line) == $level) // Si on tombe sur un sous-total, il faut que ce soit un du même niveau que le titre
+				elseif ($add_line && static::isModSubtotalLine($line) && static::getNiveau($line) == $level) // Si on tombe sur un sous-total, il faut que ce soit un du même niveau que le titre.
 				{
-
-					if ($withBlockLine) $TLine[] = $line;
+					if (self::isSubtotal($line)) {
+						if ($withBlockLine) $TLine[] = $line;
+					} // Si le sous-total a été supprimé, il ne faut pas premdre le titre de mêm niveau qui suit
 					break;
 				}
 
 				if ($add_line)
 				{
-
 					if (!$withBlockLine && (self::isTitle($line) || self::isSubtotal($line)) ) continue;
 					else $TLine[] = $line;
 				}
@@ -865,7 +890,7 @@ class TSubtotal {
 
 			case 'order_supplier':
 			    $object->special_code = SELF::$module_number;
-			    if (empty($desc)) $desc = $label;
+			    if (empty($desc) ) $desc = $label;
 			    $res = $object->updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, $price_base_type, $info_bits, $type, 0, $date_start, $date_end, $array_options, $fk_unit);
 			    break;
 
@@ -905,36 +930,35 @@ class TSubtotal {
 	 */
 	public static function getAllTitleFromLine(&$origin_line, $reverse = false)
 	{
-		global $db, $object;
+		global $db;
 
 		$TTitle = array();
-		if(! empty($object->id) && in_array($object->element, array('propal', 'commande', 'facture'))) {}
-		else {
-			if ($origin_line->element == 'propaldet')
-			{
-				$object = new Propal($db);
-				$object->fetch($origin_line->fk_propal);
+		$current_object = null;
+
+		// Get the parent object if needed
+		if (!empty($GLOBALS['object']->id) && in_array($GLOBALS['object']->element, array('propal', 'commande', 'facture'))) {
+			$current_object = $GLOBALS['object'];
+		} else {
+			if ($origin_line->element == 'propaldet') {
+				$current_object = new Propal($db);
+				$current_object->fetch($origin_line->fk_propal);
 			}
-			else if ($origin_line->element == 'commandedet')
-			{
-				$object = new Commande($db);
-				$object->fetch($origin_line->fk_commande);
+			else if ($origin_line->element == 'commandedet') {
+				$current_object = new Commande($db);
+				$current_object->fetch($origin_line->fk_commande);
 			}
-			else if ($origin_line->element == 'facturedet')
-			{
-				$object = new Facture($db);
-				$object->fetch($origin_line->fk_facture);
+			else if ($origin_line->element == 'facturedet') {
+				$current_object = new Facture($db);
+				$current_object->fetch($origin_line->fk_facture);
 			}
-			else
-			{
+			else {
 				return $TTitle;
 			}
 		}
 
 		// Récupération de la position de la ligne
 		$i = 0;
-		foreach ($object->lines as &$line)
-		{
+		foreach ($current_object->lines as &$line) {
 			if ($origin_line->id == $line->id) break;
 			else $i++;
 		}
@@ -942,29 +966,23 @@ class TSubtotal {
 		$i--; // Skip la ligne d'origine
 
 		// Si elle n'est pas en 1ère position, alors on cherche des titres au dessus
-		if ($i >= 0)
-		{
+		if ($i >= 0) {
 			$next_title_lvl_to_skip = 0;
-			for ($y = $i; $y >= 0; $y--)
-			{
+			for ($y = $i; $y >= 0; $y--) {
 				// Si je tombe sur un sous-total, je récupère son niveau pour savoir quel est le prochain niveau de titre que doit ignorer
-				if (self::isSubtotal($object->lines[$y]))
-				{
-					$next_title_lvl_to_skip = self::getNiveau($object->lines[$y]);
+				if (self::isSubtotal($current_object->lines[$y])) {
+					$next_title_lvl_to_skip = self::getNiveau($current_object->lines[$y]);
 				}
-				elseif (self::isTitle($object->lines[$y]))
-				{
-					if ($object->lines[$y]->qty == $next_title_lvl_to_skip)
-					{
+				elseif (self::isTitle($current_object->lines[$y])) {
+					if ($current_object->lines[$y]->qty == $next_title_lvl_to_skip) {
 						$next_title_lvl_to_skip = 0;
 						continue;
 					}
-					else
-					{
-						if (empty($object->lines[$y]->array_options) && !empty($object->lines[$y]->id)) $object->lines[$y]->fetch_optionals();
-						$TTitle[$object->lines[$y]->id] = $object->lines[$y];
+					else {
+						if (empty($current_object->lines[$y]->array_options) && !empty($current_object->lines[$y]->id)) $current_object->lines[$y]->fetch_optionals();
+						$TTitle[$current_object->lines[$y]->id] = $current_object->lines[$y];
 
-						if ($object->lines[$y]->qty == 1) break;
+						if ($current_object->lines[$y]->qty == 1) break;
 					}
 				}
 			}
@@ -1130,9 +1148,6 @@ class TSubtotal {
 
 				// Print: Designation
 				$label = $line->label;
-				if( (float)DOL_VERSION < 6 ) {
-					$label = !empty($line->label) ? $line->label : $line->desc;
-				}
 
 
 				$pdf->startTransaction();
@@ -1424,7 +1439,7 @@ class TSubtotal {
 		$pdf->SetXY($col1x, $tab2_top + 0);
 		$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalHT"), 0, 'L', 1);
 
-		// $total_ht = ($conf->multicurrency->enabled && $object->mylticurrency_tx != 1) ? $TTot['multicurrency_total_ht'] : $TTot['total_ht'];
+		// $total_ht = (isModEnabled('multicurrency') && $object->mylticurrency_tx != 1) ? $TTot['multicurrency_total_ht'] : $TTot['total_ht'];
 		$total_ht = $TTot['total_ht'];
 		$pdf->SetXY($col2x, $tab2_top + 0);
 		$pdf->MultiCell($largcol2, $tab2_hl, price($total_ht, 0, $outputlangs), 0, 'R', 1);
@@ -1464,7 +1479,7 @@ class TSubtotal {
 		$pdf->SetFillColor(224,224,224);
 		$pdf->MultiCell($col2x-$col1x, $tab2_hl, $outputlangs->transnoentities("TotalTTC"), $useborder, 'L', 1);
 
-		// $total_ttc = ($conf->multicurrency->enabled && $object->multiccurency_tx != 1) ? $TTot['multicurrency_total_ttc'] : $TTot['total_ttc'];
+		// $total_ttc = (isModEnabled('multicurrency') && $object->multiccurency_tx != 1) ? $TTot['multicurrency_total_ttc'] : $TTot['total_ttc'];
 		$total_ttc = $TTot['total_ttc'];
 		$pdf->SetXY($col2x, $tab2_top + $tab2_hl * $index);
 		$pdf->MultiCell($largcol2, $tab2_hl, price($total_ttc, 0, $outputlangs), $useborder, 'R', 1);
@@ -1572,5 +1587,22 @@ class TSubtotal {
 		$title = $line->label;
 		if (empty($title)) $title = !empty($line->description) ? $line->description : $line->desc;
 		return $title;
+	}
+
+	/**
+	 * Méthode pour récupérer le code html contenu dans un éditeur WYSIWYG d'un dictionnaire
+	 *
+	 * @return	string
+	 */
+	public static function getHtmlDictionnary():string
+	{
+		global $db;
+		$value = '';
+		$sql = 'SELECT content FROM '.$db->prefix().'c_subtotal_free_text WHERE rowid = '.GETPOST('rowid', 'int');
+		$resql = $db->query($sql);
+		if ($resql && ($obj = $db->fetch_object($resql))) {
+			$value = $obj->content;
+		}
+		return $value;
 	}
 }

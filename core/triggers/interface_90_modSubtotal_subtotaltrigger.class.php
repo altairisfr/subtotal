@@ -31,6 +31,7 @@
  */
 
 require_once DOL_DOCUMENT_ROOT.'/core/triggers/dolibarrtriggers.class.php';
+include_once __DIR__ . '/../../lib/subtotal.lib.php';
 
 /**
  * Trigger class
@@ -138,7 +139,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 			$action = 'LINEBILL_SUPPLIER_MODIFY';
 		}
 		/* Refer to issue #379 */
-		if($action == 'LINEBILL_INSERT'){
+		if($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_CREATE'){
 			static $TInvoices = array();
 			if (!isset($TInvoices[$object->fk_facture]) || $TInvoices[$object->fk_facture] === null) {
 				$staticInvoice = new Facture($this->db);
@@ -197,7 +198,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             require_once DOL_DOCUMENT_ROOT . '/commande/class/commande.class.php';
             $originOrderLine = new OrderLine($this->db);
 
-            $originOrderLineFetchReturn = $originOrderLine->fetch($originSendingLine->fk_origin_line);
+			$originOrderLineFetchReturn = $originOrderLine->fetch($originSendingLine->fk_elementdet ?? $originSendingLine->fk_elementdet);
 
             if ($originOrderLineFetchReturn < 0) {
                 $this->error = $originOrderLine->error;
@@ -252,7 +253,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 		}
 
 
-        if ($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_SUPPLIER_CREATE')
+        if ($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_CREATE' || $action == 'LINEBILL_SUPPLIER_CREATE')
 		{
 		    $is_supplier = $action == 'LINEBILL_SUPPLIER_CREATE' ? true : false;
             /** @var bool $subtotal_skip Permet d'éviter de faire du traitement en double sur les titres est sous-totaux car ils ont automatiquement le bon rang, il ne faut donc pas faire un addline pour en suite update le rang ici */
@@ -301,10 +302,15 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
                             }
 
                             $label = str_replace(array('__REFORDER__', '__REFCUSTOMER__'), array($commande->ref, $commande->ref_client), $label);
+							$desc = '';
+
+							if(GETPOST('subtotal_add_shipping_list_to_title_desc', 'int')){
+								$desc = $this->getShippingList($commande->id);
+							}
 
                             if(!empty($current_fk_commande)) {
                                 $subtotal_skip = true;
-                                TSubtotal::addTitle($facture, $label, 1, $rang);
+                                TSubtotal::addTitle($facture, $label, 1, $rang, $desc);
                                 $rang++;
                             }
                         }
@@ -318,7 +324,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 					    {
                             $subtotal_skip = true;
                             $subtotal_bloc_already_add_st = 1;
-							$rang+=2; // pour eviter un bug de décalage ou le sous total ce retrouve apres le nouveau titre : dug constaté en V16 ne doit pas avoir d'impact sur les anciennes versions
+							$rang += 2; // pour eviter un bug de décalage ou le sous total ce retrouve apres le nouveau titre : bug constaté en V16 ne doit pas avoir d'impact sur les anciennes versions
                             TSubtotal::addTotal($facture, $langs->trans('SubTotal'), 1, $rang);
                             $subtotal_bloc_already_add_st = 0;
                             $rang++;
@@ -415,71 +421,72 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 			// on recupere la commande
 			$object->fetchObjectLinked();
 
+			// Fetch the linked order once
+			$cmd = null;
+			if (count($object->linkedObjectsIds['commande'] ?? []) === 1) {
+				$cmd = new Commande($this->db);
+				$res = $cmd->fetch(current($object->linkedObjectsIds['commande']));
+				if ($res <= 0) {
+					setEventMessage($langs->trans('ErrorLoadingLinkedOrder'), 'errors');
+				} else {
+					$resLines = $cmd->fetch_lines();
+					if ($resLines <= 0) {
+						setEventMessage($langs->trans('ErrorLoadingLinesFromLinkedOrder'), 'errors');
+					}
+				}
+			}
+
+			$linesToDelete = [];
+
 			foreach ($object->lines as &$line) {
 				$orderline = new OrderLine($this->db);
 				$orderline->fetch($line->origin_line_id);
-				// si la conf pas d'affichage des titres  et consorts (sous total )
-				//on supprime la ligne de sous total
-				if (getDolGlobalString('NO_TITLE_SHOW_ON_EXPED_GENERATION')){
-					// le special code n'est pas tranmit dans l'expedition
-					// @todo voir plus tard pourquoi nous n'avons pas cette information dans la ligne d'expedition
-					if (empty($line->special_code)){
-						//  récuperation  de la facture generé par Trigger
 
-						if (count($object->linkedObjectsIds['commande']) == 1) {
-							$cmd = new Commande($this->db);
-							$res = $cmd->fetch(array_pop($object->linkedObjectsIds['commande']));
-							if ($res > 0  ){
-								$resLines = $cmd->fetch_lines();
-								if ($resLines > 0 ) {
-									foreach ($cmd->lines as $cmdLine){
-										if ($cmdLine->id == $line->origin_line_id){
-											$line->special_code = $cmdLine->special_code;
-											break;
-										}
-									}
-								} else{
-									//error
-									setEventMessage($langs->trans("ErrorLoadingLinesFromLinkedOrder"),'errors');
-								}
-							} else{
-								//error
-								setEventMessage($langs->trans("ErrorLoadingLinkedOrder"),'errors');
+				if (getDolGlobalString('NO_TITLE_SHOW_ON_EXPED_GENERATION')) {
+					// conf "Ne pas reporter les lignes de titre lors de la génération d’expédition"
+					// => suppression des lignes qui correspondent à un titre ou sous-total
+					// comme les lignes d'expédition n'ont pas d'attribut `special_code`, on doit le
+					// récupérer depuis les lignes de la commande.
+					if (!isset($line->special_code) && $cmd) {
+						foreach ($cmd->lines as $cmdLine) {
+							if ($cmdLine->id == $line->origin_line_id) {
+								$line->special_code = $cmdLine->special_code;
+								break;
 							}
 						}
-
 					}
 
-						if(TSubtotal::isModSubtotalLine($line)) {
-							$resdelete = $line->delete($user);
-							if ($resdelete < 0){
-								setEventMessage($langs->trans('Error_subtotal_delete_line'),'errors');
-							}
+					if (TSubtotal::isModSubtotalLine($line)) {
+						$resdelete = $line->delete($user);
+						if ($resdelete < 0) {
+							setEventMessage($langs->trans('Error_subtotal_delete_line'), 'errors');
 						}
+					}
 				}
 
-				if(TSubtotal::isModSubtotalLine($orderline)) { // Nous sommes sur une ligne titre, si la ligne précédente est un titre de même niveau, on supprime la ligne précédente
+				if (TSubtotal::isModSubtotalLine($orderline)) {
 					$line->special_code = TSubtotal::$module_number;
+				}
 
-				}
-			}
-			$TLinesToDelete = array();
-			foreach ($object->lines as &$line) {
-				if(TSubtotal::isTitle($line)) {
-					$TLines = TSubtotal::getLinesFromTitleId($object, $line->id, true);
-					$TBlocks = array();
+				if (TSubtotal::isTitle($line)) {
+					$lines = TSubtotal::getLinesFromTitleId($object, $line->id, true);
+					$blocks = [];
 					$isThereProduct = false;
-					foreach($TLines as $lineInBlock) {
-							if(TSubtotal::isModSubtotalLine($lineInBlock) ) $TBlocks[$lineInBlock->id] = $lineInBlock;
-							else $isThereProduct = true;
+					foreach ($lines as $lineInBlock) {
+						if (TSubtotal::isModSubtotalLine($lineInBlock)) {
+							$blocks[$lineInBlock->id] = $lineInBlock;
+						} else {
+							$isThereProduct = true;
+						}
 					}
-					if(!$isThereProduct) {
-						$TLinesToDelete = array_merge($TLinesToDelete, $TBlocks);
+					if (!$isThereProduct) {
+						$linesToDelete = array_merge($linesToDelete, $blocks);
 					}
 				}
 			}
-			if (!empty($TLinesToDelete)) {
-				foreach ($TLinesToDelete as $lineToDelete) {
+
+			if (!empty($linesToDelete)) {
+				foreach ($linesToDelete as $lineToDelete) {
 					$lineToDelete->delete($user);
 				}
 			}
@@ -610,7 +617,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        } elseif ($action == 'LINEORDER_INSERT') {
+        } elseif ($action == 'LINEORDER_INSERT' || $action == 'LINEORDER_CREATE') {
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
@@ -640,8 +647,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
         }
 
         // Proposals
-        elseif ((floatval(DOL_VERSION) <= 7.0 && in_array($action, array('PROPAL_CLONE', 'ORDER_CLONE', 'BILL_CLONE'))) ||
-                (floatval(DOL_VERSION) >= 8.0 && ! empty($object->context) && in_array('createfromclone', $object->context) && in_array($action, array('PROPAL_CREATE', 'ORDER_CREATE', 'BILL_CREATE')))) {
+        elseif ((floatval(DOL_VERSION) >= 8.0 && ! empty($object->context) && in_array('createfromclone', $object->context) && in_array($action, array('PROPAL_CREATE', 'ORDER_CREATE', 'BILL_CREATE')))) {
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
@@ -705,7 +711,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        } elseif ($action == 'LINEPROPAL_INSERT') {
+        } elseif ($action == 'LINEPROPAL_INSERT' || $action == 'LINEPROPAL_CREATE') {
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
@@ -756,16 +762,20 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 
             if (getDolGlobalString('INVOICE_USE_SITUATION') && $object->element == 'facture' && $object->type == Facture::TYPE_SITUATION)
             {
-                $object->situation_final = 1;
-                foreach($object->lines as $i => $line) {
-                    if(!TSubtotal::isModSubtotalLine($line) && $line->situation_percent != 100){
-                        $object->situation_final = 0;
-                        break;
-                    }
-                }
-                // ne pas utiliser $object->setFinal ne peut pas marcher
-                $sql = 'UPDATE ' . MAIN_DB_PREFIX . 'facture SET situation_final = ' . $object->situation_final . ' where rowid = ' . $object->id;
-                $resql=$object->db->query($sql);
+				$object->situation_final = 1;
+
+				foreach ($object->lines as $line) {
+					$progress = getLineCurrentProgress($object->db, $object->id, $line);
+
+					if (!TSubtotal::isModSubtotalLine($line) && $progress < 100) {
+						$object->situation_final = 0;
+						break;
+					}
+				}
+
+				// ne pas utiliser $object->setFinal ne peut pas marcher
+				$sql = 'UPDATE ' . $this->db->prefix() . 'facture SET situation_final = ' . $object->situation_final . ' WHERE rowid = ' . $object->id;
+				$resql = $object->db->query($sql);
             }
 
 
@@ -789,7 +799,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        } elseif ($action == 'LINEBILL_INSERT') {
+        } elseif ($action == 'LINEBILL_INSERT' || $action == 'LINEBILL_CREATE') {
         	dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
@@ -953,7 +963,7 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
-        }elseif ($action == 'LINESHIPPING_INSERT') {
+        }elseif ($action == 'LINESHIPPING_INSERT' || $action == 'LINESHIPPING_CREATE') {
 
 				dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 		}
@@ -971,4 +981,91 @@ class Interfacesubtotaltrigger extends DolibarrTriggers
 
         return 0;
     }
+
+
+
+
+	/**
+	 *  List BL ref
+	 *  @param  int	$orderId
+	 *  @return	string
+	 */
+	private function getShippingList($orderId)
+	{
+		$refBlList = array();
+		$refExpList = array();
+
+		if(!function_exists('isModEnabled')){
+			return '';
+		}
+
+		if (!isModEnabled('expedition')) {
+			return '';
+		}
+
+		// LIST SHIPPING LINKED TO ORDER
+		$sqlShip = "SELECT fk_target FROM `".MAIN_DB_PREFIX."element_element` WHERE `targettype` = 'shipping' AND sourcetype = 'commande' AND fk_source=".intval($orderId)." ORDER BY `fk_source` ASC";
+
+		$resultShip = $this->db->query($sqlShip);
+		if ($resultShip)
+		{
+			while ($shipping = $this->db->fetch_object($resultShip) )
+			{
+
+				if (isModEnabled('delivery')) {
+
+					// SELECT LIVRAISON LINKED TO SHIPPING
+					$sqlBl = "SELECT liv.ref
+								FROM `".MAIN_DB_PREFIX."element_element`  el
+								JOIN `".MAIN_DB_PREFIX."livraison` liv ON ( el.fk_target = liv.rowid )
+								WHERE el.`targettype` = 'delivery'
+												AND el.sourcetype = 'shipping'
+												AND el.fk_source=".$shipping->fk_target."
+												AND liv.fk_statut = 1
+							ORDER BY el.`fk_target` ASC";
+
+					$resultDelivery = $this->db->query($sqlBl);
+					if ($resultDelivery)
+					{
+						while ($delivery = $this->db->fetch_object($resultDelivery) )
+						{
+							$refBlList[] = $delivery->ref;
+						}
+					}
+
+				}
+
+
+				// SELECT SHIPPING REF
+				$sqlExp = "SELECT exp.ref
+					FROM `" . MAIN_DB_PREFIX . "expedition`  exp
+					WHERE exp.`rowid` =" . $shipping->fk_target;
+
+				$resultExp = $this->db->query($sqlExp);
+				if ($resultExp) {
+					$exp = $this->db->fetch_object($resultExp);
+					$refExpList[] = $exp->ref;
+				}
+
+			}
+		}
+
+		global $langs;
+		$langs->load('subtotal@subtotal');
+		$refList = array_merge($refBlList,$refExpList);
+		$output = '';
+
+
+		if(!empty($refExpList)){
+			$objectLabel = count($refExpList)>1?$langs->trans('LinkedShippings'):$langs->trans('LinkedShipping');
+			$output.= (!empty($output)?'<br>':'').'<strong>'.$objectLabel.' :</strong> '.implode(', ', $refList) ;
+		}
+
+		if(!empty($refBlList)){
+			$objectLabel = count($refBlList)>1?$langs->trans('LinkedDeliveries'):$langs->trans('LinkedDelivery');
+			$output.= (!empty($output)?'<br>':'').'<strong>'.$objectLabel.' :</strong> '.implode(', ', $refList) ;
+		}
+
+		return $output;
+	}
 }
