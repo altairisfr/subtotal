@@ -537,12 +537,14 @@ class pdf_einstein_subtotal extends ModelePDFCommandes
 						if (! isset($this->tva[$vatrate])) $this->tva[$vatrate] = 0;
 
 						if (! empty($object->lines[$i]->TTotal_tva)) {
-							foreach ($object->lines[$i]->TTotal_tva as $vatrate => $tvaligne) {
-								if (! empty($this->tva[$vatrate])) $this->tva[$vatrate] += $tvaligne;
+							foreach ($object->lines[$i]->TTotal_tva as $sub_vatrate => $sub_tvaligne) {
+								if (!isset($this->tva[$sub_vatrate]) || $this->tva[$sub_vatrate] === '') $this->tva[$sub_vatrate] = 0;
+								$this->tva[$sub_vatrate] += $sub_tvaligne;
 							}
 						} else {
 							// standard
-							if (! empty($tvaligne)) $this->tva[$vatrate] += $tvaligne;
+							if (!isset($this->tva[$vatrate]) || $this->tva[$vatrate] === '') $this->tva[$vatrate] = 0;
+							$this->tva[$vatrate] += $tvaligne;
 						}
 					}
 					// Add line
@@ -717,8 +719,8 @@ class pdf_einstein_subtotal extends ModelePDFCommandes
         // Check a payment mode is defined
         /* Not used with orders
 		if (empty($object->mode_reglement_code)
-        	&& ! $conf->global->FACTURE_CHQ_NUMBER
-        	&& ! $conf->global->FACTURE_RIB_NUMBER)
+        	&& ! getDolGlobalInt('FACTURE_CHQ_NUMBER')
+        	&& ! getDolGlobalString('FACTURE_RIB_NUMBER'))
 		{
             $pdf->SetXY($this->marge_gauche, $posy);
             $pdf->SetTextColor(200,0,0);
@@ -1397,7 +1399,7 @@ class pdf_einstein_subtotal extends ModelePDFCommandes
 	function _pagefoot(&$pdf,$object,$outputlangs,$hidefreetext=0)
 	{
 		$showdetails=0;
-		$free_text = (float)DOL_VERSION > 3.8 ? 'ORDER_FREE_TEXT' : 'COMMANDE_FREE_TEXT';
+		$free_text = 'ORDER_FREE_TEXT';
 		return pdf_pagefoot($pdf,$outputlangs,$free_text,$this->emetteur,$this->marge_basse,$this->marge_gauche,$this->page_hauteur,$object,$showdetails,$hidefreetext);
 	}
 
