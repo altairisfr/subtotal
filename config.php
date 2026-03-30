@@ -19,6 +19,5 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-	if (is_file('../main.inc.php')) include "../main.inc.php";
-elseif (is_file('../../../main.inc.php')) include "../../../main.inc.php";
-else include "../../main.inc.php";
+// Load Dolibarr environment
+require_once "main_module.inc.php";
