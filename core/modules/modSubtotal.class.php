@@ -156,38 +156,38 @@ class modSubtotal extends DolibarrModules
 		$this->depends = array();
 
 		$this->conflictwith=array('modMilestone');
-		// List of modules id to disable if this one is disabled
-		$this->requiredby = array();
-		// Minimum version of PHP required by module
-		$this->phpmin = array(7,0);
-		// Minimum version of Dolibarr required by module
-		$this->need_dolibarr_version = array(16,0);
-		$this->langfiles = array("subtotal@subtotal"); // langfiles@titre
-		// Constants
-		// List of particular constants to add when module is enabled
-		// (key, 'chaine', value, desc, visible, 'current' or 'allentities', deleteonunactive)
-		// Example:
-		$this->const = array(
-			0=>array(
-				'SUBTOTAL_STYLE_TITRES_SI_LIGNES_CACHEES',
-				'chaine',
-				'I',
-				'Définit le style (B : gras, I : Italique, U : Souligné) des sous titres lorsque le détail des lignes et des ensembles est caché',
-				1
-			)
-		,1=>array('SUBTOTAL_ALLOW_ADD_BLOCK', 'chaine', '1', 'Permet l\'ajout de titres et sous-totaux')
-		,2=>array('SUBTOTAL_ALLOW_EDIT_BLOCK', 'chaine', '1', 'Permet de modifier titres et sous-totaux')
-		,3=>array('SUBTOTAL_ALLOW_REMOVE_BLOCK', 'chaine', '1', 'Permet de supprimer les titres et sous-totaux')
-		,4=>array('SUBTOTAL_TITLE_STYLE', 'chaine', 'BU')
-		,5=>array('SUBTOTAL_SUBTOTAL_STYLE', 'chaine', 'B')
-			//	1=>array(
-			//		'MYMODULE_MYNEWCONST2',
-			//		'chaine',
-			//		'myvalue',
-			//		'This is another constant to add',
-			//		0
-			//	)
-		);
+        // List of modules id to disable if this one is disabled
+        $this->requiredby = array();
+        // Minimum version of PHP required by module
+        $this->phpmin = array(7,4);
+        // Minimum version of Dolibarr required by module
+        $this->need_dolibarr_version = array(18,0);
+        $this->langfiles = array("subtotal@subtotal"); // langfiles@titre
+        // Constants
+        // List of particular constants to add when module is enabled
+        // (key, 'chaine', value, desc, visible, 'current' or 'allentities', deleteonunactive)
+        // Example:
+        $this->const = array(
+            	0=>array(
+            		'SUBTOTAL_STYLE_TITRES_SI_LIGNES_CACHEES',
+            		'chaine',
+            		'I',
+            		'Définit le style (B : gras, I : Italique, U : Souligné) des sous titres lorsque le détail des lignes et des ensembles est caché',
+            		1
+            	)
+				,1=>array('SUBTOTAL_ALLOW_ADD_BLOCK', 'chaine', '1', 'Permet l\'ajout de titres et sous-totaux')
+				,2=>array('SUBTOTAL_ALLOW_EDIT_BLOCK', 'chaine', '1', 'Permet de modifier titres et sous-totaux')
+				,3=>array('SUBTOTAL_ALLOW_REMOVE_BLOCK', 'chaine', '1', 'Permet de supprimer les titres et sous-totaux')
+				,4=>array('SUBTOTAL_TITLE_STYLE', 'chaine', 'BU')
+				,5=>array('SUBTOTAL_SUBTOTAL_STYLE', 'chaine', 'B')
+            //	1=>array(
+            //		'MYMODULE_MYNEWCONST2',
+            //		'chaine',
+            //		'myvalue',
+            //		'This is another constant to add',
+            //		0
+            //	)
+        );
 
 
 
