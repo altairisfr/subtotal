@@ -2,7 +2,13 @@
 All notable changes to this project will be documented in this file.
 
 # [Unreleased]
+
+
 ## Release 3.29
+- FIX : Warning "Undefined array key" on situation invoices - *23/03/2026* - 3.29.6
+    + Added isset() check before accessing $TTotal_tva array to prevent PHP warnings
+- FIX : DA027702 - *03/02/2026* - 3.29.5
+- FIX : COMPAT V23 - *02/12/2025* - 3.29.4
 - FIX : DA027547 - Correct VAT display in PDFs with hideInnerLineschecked - *05/01/2026* - 3.29.3
     Addresses issue where VAT lines were missing in generated PDFs when the "hide inner lines" option was active.
     Corrected VAT accumulation logic in `pdf_crabe_subtotal.modules.php` and `pdf_einstein_subtotal.modules.php` to properly sum VAT from subtotal lines.
