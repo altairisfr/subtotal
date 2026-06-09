@@ -333,6 +333,6 @@ function p($content, $title = '')
 	if (is_array($content)) {
 		print "<pre>";var_dump($content); print "</pre>";
 	} else {
-		print "<p>$content</p>";
+		print "<p>".$content."</p>";
 	}
 }
