@@ -1,8 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+## 2026.06
 
+- FIX: remove duplicate code
 
 ## Release 3.29
 - FIX : Warning "Undefined array key" on situation invoices - *23/03/2026* - 3.29.6
