@@ -423,7 +423,7 @@ class TSubtotal
 	 * @param bool 	  $supplier
 	 * @return int|false
 	 */
-	public static function getOrderIdFromLineId(DoliDB &$db, int $fk_commandedet, bool $supplier = false)
+	public static function getOrderIdFromLineId(DoliDB &$db, $fk_commandedet, bool $supplier = false)
 	{
 
 		if (empty($fk_commandedet)) return false;
